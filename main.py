@@ -30,12 +30,27 @@ def remove_old_files(dest_dir):
 
 
 def download_zip(repo_url):
-    """Baixa o arquivo ZIP do repositório do GitHub usando http.client."""
+    """Baixa o arquivo ZIP do repositório do GitHub sem usar requests."""
+    # Parse da URL
     parsed_url = urlparse(repo_url)
-    conn = http.client.HTTPSConnection(parsed_url.netloc)
-    conn.request("GET", parsed_url.path)
-    response = conn.getresponse()
 
+    # Estabelecendo a conexão com o servidor
+    connection = http.client.HTTPSConnection(parsed_url.netloc)
+
+    # Requisição para a URL (usando GET)
+    connection.request("GET", parsed_url.path)
+
+    # Obtendo a resposta
+    response = connection.getresponse()
+
+    # Verificando redirecionamento (302)
+    if response.status == 302:
+        # Se houver redirecionamento, pega o novo local
+        new_location = response.getheader("Location")
+        connection.close()
+        return download_zip(new_location)  # Faz o download no novo local
+
+    # Verificando se o status é 200 (OK)
     if response.status == 200:
         return response
     else:
