@@ -7,5 +7,5 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-python main.py
-pause
+start "" pythonw.exe ./main.py
+exit

@@ -1,12 +1,12 @@
+import io
 import os
 import time
-import platform
 import shutil
+import zipfile
+import requests
+import platform
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-import requests
-import zipfile
-import io
 
 
 def get_default_path():
@@ -78,7 +78,9 @@ def download_github_repo(repo_url, dest_dir, progress_callback):
                 if elapsed_time > 0:  # Evitar divisão por zero
                     speed = total_bytes / elapsed_time  # Bytes por segundo
                     speed_mb = speed / (1024 * 1024)  # Converter para megabytes por segundo
-                    progress_callback(2, f"Baixando... {speed_mb:.2f} MB/s")
+                    # Converter bytes baixados para MB
+                    total_mb = total_bytes / (1024 * 1024)  # Bytes para megabytes
+                    progress_callback(2, f"Baixando... {total_mb:.2f} MB baixados | {speed_mb:.2f} MB/s")
 
         # Passo 3: Extrair arquivos
         progress_callback(3, "Extraindo arquivos...")
