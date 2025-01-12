@@ -96,7 +96,7 @@ def download_github_repo(repo_url, dest_dir, progress_callback):
 class GitHubDownloaderApp:
     def __init__(self, root: tk.Tk):
         self.root = root
-        self.root.title("GitHub Downloader")
+        self.root.title("Instalador Última Esperança")
 
         self.repo_url = (
             "https://github.com/devleonardoamaral/minecraft_ultimaesperanca_modpack/archive/refs/heads/master.zip"
