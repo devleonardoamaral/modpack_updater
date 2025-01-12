@@ -3,10 +3,11 @@ import os
 import time
 import shutil
 import zipfile
-import requests
 import platform
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+import http.client
+from urllib.parse import urlparse
 
 
 def get_default_path():
@@ -29,12 +30,16 @@ def remove_old_files(dest_dir):
 
 
 def download_zip(repo_url):
-    """Baixa o arquivo ZIP do repositório do GitHub."""
-    response = requests.get(repo_url, stream=True)
-    if response.status_code == 200:
+    """Baixa o arquivo ZIP do repositório do GitHub usando http.client."""
+    parsed_url = urlparse(repo_url)
+    conn = http.client.HTTPSConnection(parsed_url.netloc)
+    conn.request("GET", parsed_url.path)
+    response = conn.getresponse()
+
+    if response.status == 200:
         return response
     else:
-        raise Exception(f"Falha no download: {response.status_code}")
+        raise Exception(f"Falha no download: {response.status}")
 
 
 def extract_zip(zip_file, dest_dir):
@@ -68,19 +73,18 @@ def download_github_repo(repo_url, dest_dir, progress_callback):
         buffer_size = 1024 * 10  # 10KB
 
         # Iterar sobre os chunks e calcular a velocidade de download
-        for chunk in response.iter_content(chunk_size=buffer_size):
-            if chunk:
-                temp_zip.write(chunk)  # Escrever o chunk no buffer
-                total_bytes += len(chunk)  # Incrementar o número de bytes baixados
+        while chunk := response.read(buffer_size):
+            temp_zip.write(chunk)  # Escrever o chunk no buffer
+            total_bytes += len(chunk)  # Incrementar o número de bytes baixados
 
-                # Calcular a velocidade de download em megabytes por segundo
-                elapsed_time = time.time() - start_time
-                if elapsed_time > 0:  # Evitar divisão por zero
-                    speed = total_bytes / elapsed_time  # Bytes por segundo
-                    speed_mb = speed / (1024 * 1024)  # Converter para megabytes por segundo
-                    # Converter bytes baixados para MB
-                    total_mb = total_bytes / (1024 * 1024)  # Bytes para megabytes
-                    progress_callback(2, f"Baixando... {total_mb:.2f} MB baixados | {speed_mb:.2f} MB/s")
+            # Calcular a velocidade de download em megabytes por segundo
+            elapsed_time = time.time() - start_time
+            if elapsed_time > 0:  # Evitar divisão por zero
+                speed = total_bytes / elapsed_time  # Bytes por segundo
+                speed_mb = speed / (1024 * 1024)  # Converter para megabytes por segundo
+                # Converter bytes baixados para MB
+                total_mb = total_bytes / (1024 * 1024)  # Bytes para megabytes
+                progress_callback(2, f"Baixando... {total_mb:.2f} MB baixados | {speed_mb:.2f} MB/s")
 
         # Passo 3: Extrair arquivos
         progress_callback(3, "Extraindo arquivos...")
