@@ -125,7 +125,7 @@ class GitHubDownloaderApp:
         self.button_frame = tk.Frame(root)
         self.button_frame.pack(pady=10)
 
-        self.confirm_button = tk.Button(self.button_frame, text="Confirmar", command=self.start_download)
+        self.confirm_button = tk.Button(self.button_frame, text="Instalar", command=self.start_download)
         self.confirm_button.grid(row=0, column=0, padx=5)
 
         self.cancel_button = tk.Button(self.button_frame, text="Fechar", command=root.quit)
