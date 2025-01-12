@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import http.client
 from urllib.parse import urlparse
+import threading  # Importando o módulo threading
 
 
 def get_default_path():
@@ -166,16 +167,40 @@ class GitHubDownloaderApp:
             )
             return
 
+        # Desativa os botões durante o download
+        self.directory_entry.config(state="disabled")
+        self.browse_button.config(state="disabled")
+        self.confirm_button.config(state="disabled")
+        self.cancel_button.config(state="disabled")
+
+        # Atualiza a interface com "Iniciando..."
         self.progress_bar["value"] = 0
         self.progress_label["text"] = "Iniciando..."
 
         def update_progress(step, status):
             self.progress_bar["value"] = step
             self.progress_label["text"] = status
-            self.root.update_idletasks()
+            self.root.update_idletasks()  # Atualiza a interface sem bloquear
 
-        download_github_repo(self.repo_url, dest_dir, update_progress)
-        messagebox.showinfo("Sucesso", "Download e instalação concluídos com sucesso!")
+        # Função para reabilitar os botões quando o download terminar
+        def enable_buttons():
+            self.directory_entry.config(state="normal")
+            self.browse_button.config(state="normal")
+            self.confirm_button.config(state="normal")
+            self.cancel_button.config(state="normal")
+
+        # Rodando o download em uma thread separada para não bloquear a interface
+        threading.Thread(
+            target=self.download_task, args=(dest_dir, update_progress, enable_buttons), daemon=True
+        ).start()
+
+    def download_task(self, dest_dir, progress_callback, enable_buttons):
+        try:
+            download_github_repo(self.repo_url, dest_dir, progress_callback)
+        finally:
+            enable_buttons()  # Reabilita os botões após o download ser concluído
+            self.progress_label["text"] = "Download e instalação concluídos!"
+            messagebox.showinfo("Sucesso", "Download e instalação concluídos com sucesso!")
 
 
 if __name__ == "__main__":
