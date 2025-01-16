@@ -126,8 +126,8 @@ class App:
         self.shader_preset_combobox.bind("<<ComboboxSelected>>", self.combobox_on_select)
         self.shader_preset_combobox.bind("<Motion>", self.move_tooltip)
 
-        self.progress_label = ttk.Label(self.frame, text="Aguardando ação...")
-        self.progress_label.pack(fill="x", anchor="n", pady=(10, 5))
+        self.progress_label = ttk.Label(self.frame, text="Aguardando ação...", anchor="sw")
+        self.progress_label.pack(fill="both", expand=True, anchor="sw", pady=(10, 5))
 
         self.progress_bar = ttk.Progressbar(self.frame, mode="determinate", maximum=100)
         self.progress_bar.pack(fill="x", anchor="n")
