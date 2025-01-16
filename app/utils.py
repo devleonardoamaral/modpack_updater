@@ -18,5 +18,4 @@ def default_path():
         return os.path.expanduser("~/Library/Application Support/minecraft")
 
     else:
-        # return os.path.expanduser("~/.minecraft")
-        return os.path.expanduser("~/Downloads/teste")
+        return os.path.expanduser("~/.minecraft")
