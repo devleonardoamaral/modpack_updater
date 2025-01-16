@@ -193,12 +193,19 @@ class App:
             label = tk.Label(
                 self.tooltip,
                 text=(
-                    "Ajusta as configurações gráficas do Minecraft, incluindo\n"
-                    "a distância de renderização e a qualidade geral dos gráficos.\n"
-                    "Essas configurações podem melhorar a experiência visual,\n"
-                    "mas também impactam o desempenho do jogo."
+                    "Ajusta as configurações do Minecraft relacionadas\n"
+                    "à performance. Configurações afetadas:\n\n"
+                    "Qualidade:\n"
+                    " - Distância de Renderização: 12 chunks\n"
+                    " - Distãncia das sombras: 12 chunks\n"
+                    " - Distãncia da Simulação: 12 chunks\n"
+                    "Performance:\n"
+                    " - Distância de Renderização: 8 chunks\n"
+                    " - Distãncia das sombras: 8 chunks\n"
+                    " - Distãncia da Simulação: 8 chunks"
                 ),
                 relief="flat",
+                justify="left",
             )
             label.pack(ipadx=5, ipady=5)
 
