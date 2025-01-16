@@ -4,6 +4,7 @@ import time
 import zipfile
 import shutil
 import tempfile
+import platform
 import http.client
 import threading
 import tkinter as tk
@@ -19,6 +20,8 @@ class App:
             "https://codeload.github.com/devleonardoamaral/minecraft_ultimaesperanca_modpack/zip/refs/heads/master"
         )
         self.tooltip = None
+
+        self.fix_windows_dpi()
 
         icon = tk.PhotoImage(file=os.path.normpath("app/assets/logo.png"))
         self.root.iconphoto(True, icon)
@@ -143,6 +146,15 @@ class App:
 
         self.button_cancel = ttk.Button(self.buttons_frame, text="Cancelar", command=self.cancel, state="disabled")
         self.button_cancel.grid(row=0, column=1, sticky="we", padx=(5, 0))
+
+    def fix_windows_dpi(self):
+        if platform.system() == "Windows":
+            try:
+                from ctypes import windll
+
+                windll.shcore.SetProcessDpiAwareness(1)
+            except Exception as e:
+                print(f"Erro ao ajustar DPI: {e}")
 
     def combobox_on_select(self, event):
         if event.widget.winfo_name() == "shader_combobox" and event.widget.get() == "Não":
