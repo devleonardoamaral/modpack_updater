@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import zipfile
 import shutil
@@ -17,6 +18,8 @@ class App:
         self.url = (
             "https://codeload.github.com/devleonardoamaral/minecraft_ultimaesperanca_modpack/zip/refs/heads/master"
         )
+        self.tooltip = None
+        ttk.Style().theme_use("clam")
         icon = tk.PhotoImage(file=os.path.normpath("app/assets/logo.png"))
         self.root.iconphoto(True, icon)
 
@@ -41,7 +44,7 @@ class App:
         self.root.wm_geometry(f"{width}x{height}+{x}+{y}")
 
         self.frame = tk.Frame(self.root)
-        self.frame.pack(expand=True, fill="both", padx=25, pady=25)
+        self.frame.pack(expand=True, fill="both", padx=25, pady=10)
 
         self.directory_label = ttk.Label(self.frame, text="Diretório do Minecraft:", anchor="w")
         self.directory_label.pack(fill="x", anchor="n")
@@ -58,14 +61,37 @@ class App:
         self.directory_button = ttk.Button(self.directory_frame, text="Explorar", command=self.select_directory)
         self.directory_button.grid(row=0, column=1, padx=(5, 0))
 
+        self.shader_label = ttk.Label(self.frame, text="Habilitar shader?", name="shader_label")
+        self.shader_label.pack(anchor="w", pady=(10, 0))
+
+        self.shader_label.bind("<Enter>", self.show_tooltip)
+        self.shader_label.bind("<Leave>", self.hide_tooltip)
+        self.shader_label.bind("<Motion>", self.move_tooltip)
+
+        self.shader_combobox = ttk.Combobox(
+            self.frame, values=["Não", "ComplementaryUnbound_r5.3.zip"], state="readonly", name="shader_combobox"
+        )
+        self.shader_combobox.set("ComplementaryUnbound_r5.3.zip")
+        self.shader_combobox.pack(fill="x", anchor="n")
+
+        self.shader_combobox.bind("<Enter>", self.show_tooltip)
+        self.shader_combobox.bind("<Leave>", self.hide_tooltip)
+
+        def shader_combobox_on_select(event):
+            self.shader_combobox.select_clear()
+            self.shader_combobox.tk_focusNext().focus_set()
+
+        self.shader_combobox.bind("<<ComboboxSelected>>", shader_combobox_on_select)
+        self.shader_combobox.bind("<Motion>", self.move_tooltip)
+
         self.progress_label = ttk.Label(self.frame, text="Aguardando ação...")
-        self.progress_label.pack(fill="x", anchor="n", pady=(45, 5))
+        self.progress_label.pack(fill="x", anchor="n", pady=(10, 5))
 
         self.progress_bar = ttk.Progressbar(self.frame, mode="determinate", maximum=100)
         self.progress_bar.pack(fill="x", anchor="n")
 
         self.buttons_frame = ttk.Frame(self.frame)
-        self.buttons_frame.pack(fill="x", anchor="n", pady=(25, 0))
+        self.buttons_frame.pack(fill="x", anchor="n", pady=(10, 0))
 
         self.buttons_frame.grid_columnconfigure(0, weight=1)
         self.buttons_frame.grid_columnconfigure(1, weight=1)
@@ -75,6 +101,35 @@ class App:
 
         self.button_cancel = ttk.Button(self.buttons_frame, text="Cancelar", command=self.cancel, state="disabled")
         self.button_cancel.grid(row=0, column=1, sticky="we", padx=(5, 0))
+
+    def show_tooltip(self, event: tk.Event):
+        self.hide_tooltip(event)
+
+        if event.widget.winfo_name() in ["shader_label", "shader_combobox"]:
+            self.tooltip = tk.Toplevel(self.shader_combobox)
+            self.tooltip.overrideredirect(True)
+            self.tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+
+            label = tk.Label(
+                self.tooltip,
+                text=(
+                    "Shaders melhoram significativamente a qualidade\n"
+                    "gráfica, mas causam grande impacto no desempenho.\n"
+                    " Se você enfrentar problemas, considere\n"
+                    "instalar o modpack com o shader desativado."
+                ),
+                relief="solid",
+                borderwidth=1,
+            )
+            label.pack()
+
+    def hide_tooltip(self, event: tk.Event):
+        if self.tooltip:
+            self.tooltip.destroy()
+
+    def move_tooltip(self, event: tk.Event):
+        if self.tooltip:
+            self.tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
 
     def select_directory(self):
         selected_dir = filedialog.askdirectory(initialdir=self.directory_entry.get())
@@ -91,12 +146,14 @@ class App:
     def enable(self):
         self.directory_entry.config(state="normal")
         self.directory_button.config(state="normal")
+        self.shader_combobox.config(state="readonly")
         self.button_install.config(state="normal")
         self.button_cancel.config(state="disabled")
 
     def disable(self):
         self.directory_entry.config(state="disabled")
         self.directory_button.config(state="disabled")
+        self.shader_combobox.config(state="disabled")
         self.button_install.config(state="disabled")
         self.button_cancel.config(state="normal")
 
@@ -127,8 +184,8 @@ class App:
                         with open(destination, "wb") as file:
                             file.write(zip_file.read(member))
 
-    def download(self, temp, progress: int):
-        self.update_progress(progress, "Iniciando Download...")
+    def download(self, temp, progress_start: int, progress_end: int):
+        self.update_progress(progress_start, "Iniciando Download...")
         parsed_url = urlparse(self.url)
         connection = http.client.HTTPSConnection(parsed_url.netloc)
         headers = {
@@ -140,8 +197,6 @@ class App:
 
         try:
             response = connection.getresponse()
-            print(response.headers)
-
             total_bytes = 0
             start_time = time.time()
             buffer_size = 8192
@@ -163,13 +218,16 @@ class App:
                     total_mb = total_bytes / (1024**2)
 
                     if total_length > 0:
-                        progress_value = progress + (80 * (total_bytes / total_length))
+                        progress_value = progress_start + (
+                            (progress_end - progress_start) * (total_bytes / total_length)
+                        )
                         self.update_progress(
                             progress_value,
                             f"Baixando... {total_mb:.2f} / {total_length / (1024**2):.2f} MB | {speed_mb:.2f} MB/s",
                         )
                     else:
-                        progress_value = progress + (80 * (total_mb / max(total_mb, self.modpack_size)))
+                        total_size = total_mb if total_mb > self.modpack_size else self.modpack_size
+                        progress_value = progress_start + ((progress_end - progress_start) * (total_mb / total_size))
                         self.update_progress(
                             progress_value,
                             f"Baixando... {total_mb:.2f} MB baixados | {speed_mb:.2f} MB/s",
@@ -185,6 +243,18 @@ class App:
         self.thread = threading.Thread(target=self.installing, daemon=True)
         self.thread.start()
 
+    def post_installation(self):
+        shader = self.shader_combobox.get()
+        if shader == "Não":
+            config_shader_path = os.path.join(self.directory_entry.get(), "config", "oculus.properties")
+
+            with open(config_shader_path, "r+") as file:
+                content = file.read()
+                file.seek(0)
+                new_content = re.sub(r"enableShaders=true", "enableShaders=false", content)
+                file.write(new_content)
+                file.truncate()
+
     def installing(self):
         self.disable()
         dest_dir = self.directory_entry.get()
@@ -197,10 +267,12 @@ class App:
             # Passo 2: Baixa novos arquivos
             with tempfile.TemporaryFile() as temp:
                 self.downloading = True
-                self.download(temp, 10)
+                self.download(temp, 10, 80)
                 self.downloading = False
-                self.update_progress(90, "Extraindo arquivos...")
+                self.update_progress(80, "Extraindo arquivos...")
                 self.extract_zip(temp, dest_dir)
+                self.update_progress(90, "Aplicando configurações...")
+                self.post_installation()
 
             # Passo 2: Extraí novos arquivos
             self.update_progress(100, "Download e instalação do modpack concluído!")
