@@ -85,13 +85,13 @@ class App:
         self.shader_combobox.bind("<Motion>", self.move_tooltip)
 
         self.progress_label = ttk.Label(self.frame, text="Aguardando ação...")
-        self.progress_label.pack(fill="x", anchor="n", pady=(10, 5))
+        self.progress_label.pack(fill="x", anchor="s", pady=(10, 5))
 
         self.progress_bar = ttk.Progressbar(self.frame, mode="determinate", maximum=100)
-        self.progress_bar.pack(fill="x", anchor="n")
+        self.progress_bar.pack(fill="x", anchor="s")
 
         self.buttons_frame = ttk.Frame(self.frame)
-        self.buttons_frame.pack(fill="x", anchor="n", pady=(10, 0))
+        self.buttons_frame.pack(fill="x", anchor="s", pady=(10, 0))
 
         self.buttons_frame.grid_columnconfigure(0, weight=1)
         self.buttons_frame.grid_columnconfigure(1, weight=1)
