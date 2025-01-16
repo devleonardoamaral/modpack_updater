@@ -2,6 +2,7 @@ import os
 import re
 import time
 import zipfile
+import platform
 import shutil
 import tempfile
 import http.client
@@ -19,7 +20,12 @@ class App:
             "https://codeload.github.com/devleonardoamaral/minecraft_ultimaesperanca_modpack/zip/refs/heads/master"
         )
         self.tooltip = None
-        ttk.Style().theme_use("clam")
+
+        if platform.system() == "Windows":
+            ttk.Style().theme_use("winnative")
+        elif platform.system() == "Linux":
+            ttk.Style().theme_use("clam")
+
         icon = tk.PhotoImage(file=os.path.normpath("app/assets/logo.png"))
         self.root.iconphoto(True, icon)
 
