@@ -2,7 +2,6 @@ import os
 import re
 import time
 import zipfile
-import platform
 import shutil
 import tempfile
 import http.client
@@ -21,11 +20,6 @@ class App:
         )
         self.tooltip = None
 
-        if platform.system() == "Windows":
-            ttk.Style().theme_use("winnative")
-        elif platform.system() == "Linux":
-            ttk.Style().theme_use("clam")
-
         icon = tk.PhotoImage(file=os.path.normpath("app/assets/logo.png"))
         self.root.iconphoto(True, icon)
 
@@ -36,8 +30,8 @@ class App:
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
 
-        width = 500
-        height = 250
+        width = 600
+        height = 425
 
         x = (screen_width - width) // 2
         y = (screen_height - height) // 2
@@ -67,37 +61,79 @@ class App:
         self.directory_button = ttk.Button(self.directory_frame, text="Explorar", command=self.select_directory)
         self.directory_button.grid(row=0, column=1, padx=(5, 0))
 
-        self.shader_label = ttk.Label(self.frame, text="Habilitar shader?", name="shader_label")
-        self.shader_label.pack(anchor="w", pady=(10, 0))
+        self.additional_config_label = ttk.Label(self.frame, text="Configurações do Minecraft")
+        self.additional_config_label.pack(anchor="w", pady=(20, 0))
 
+        self.additional_config_frame = ttk.Frame(self.frame, relief="groove", borderwidth=2)
+        self.additional_config_frame.pack(fill="both", anchor="n", pady=(0, 10))
+
+        self.preset_label = ttk.Label(
+            self.additional_config_frame, text="Predefinição de Performance:", name="preset_label"
+        )
+        self.preset_label.pack(anchor="w", padx=5)
+        self.preset_label.bind("<Enter>", self.show_tooltip)
+        self.preset_label.bind("<Leave>", self.hide_tooltip)
+        self.preset_label.bind("<Motion>", self.move_tooltip)
+
+        self.preset_combobox = ttk.Combobox(
+            self.additional_config_frame, values=["Qualidade", "Performance"], state="readonly", name="preset_combobox"
+        )
+        self.preset_combobox.set("Qualidade")
+        self.preset_combobox.pack(fill="x", anchor="n", padx=5, pady=(0, 5))
+        self.preset_combobox.bind("<Enter>", self.show_tooltip)
+        self.preset_combobox.bind("<Leave>", self.hide_tooltip)
+        self.preset_combobox.bind("<<ComboboxSelected>>", self.combobox_on_select)
+        self.preset_combobox.bind("<Motion>", self.move_tooltip)
+
+        self.shader_frame_label = ttk.Label(self.frame, text="Configurações do Shader")
+        self.shader_frame_label.pack(anchor="w", pady=(10, 0))
+
+        self.shader_frame = ttk.Frame(self.frame, relief="groove", borderwidth=2)
+        self.shader_frame.pack(fill="x", anchor="n", pady=(0, 10))
+
+        self.shader_label = ttk.Label(self.shader_frame, text="Habilitar shader?", name="shader_label")
+        self.shader_label.pack(anchor="w", padx=5, pady=(5, 0))
         self.shader_label.bind("<Enter>", self.show_tooltip)
         self.shader_label.bind("<Leave>", self.hide_tooltip)
         self.shader_label.bind("<Motion>", self.move_tooltip)
 
         self.shader_combobox = ttk.Combobox(
-            self.frame, values=["Não", "ComplementaryUnbound_r5.3.zip"], state="readonly", name="shader_combobox"
+            self.shader_frame, values=["Não", "ComplementaryUnbound_r5.3"], state="readonly", name="shader_combobox"
         )
-        self.shader_combobox.set("ComplementaryUnbound_r5.3.zip")
-        self.shader_combobox.pack(fill="x", anchor="n")
-
+        self.shader_combobox.set("ComplementaryUnbound_r5.3")
+        self.shader_combobox.pack(fill="x", anchor="n", padx=5)
         self.shader_combobox.bind("<Enter>", self.show_tooltip)
         self.shader_combobox.bind("<Leave>", self.hide_tooltip)
-
-        def shader_combobox_on_select(event):
-            self.shader_combobox.select_clear()
-            self.shader_combobox.tk_focusNext().focus_set()
-
-        self.shader_combobox.bind("<<ComboboxSelected>>", shader_combobox_on_select)
+        self.shader_combobox.bind("<<ComboboxSelected>>", self.combobox_on_select)
         self.shader_combobox.bind("<Motion>", self.move_tooltip)
 
+        self.shader_preset_label = ttk.Label(self.shader_frame, text="Qualidade do shader:", name="shader_preset_label")
+        self.shader_preset_label.pack(anchor="w", padx=5, pady=(5, 0))
+        self.shader_preset_label.bind("<Enter>", self.show_tooltip)
+        self.shader_preset_label.bind("<Leave>", self.hide_tooltip)
+        self.shader_preset_label.bind("<Motion>", self.move_tooltip)
+
+        self.shader_preset_combobox = ttk.Combobox(
+            self.shader_frame,
+            values=["Baixa", "Média", "Alta"],
+            state="readonly",
+            name="shader_preset_combobox",
+        )
+        self.shader_preset_combobox.set("Média")
+        self.shader_preset_combobox.pack(fill="x", anchor="n", padx=5, pady=(0, 5))
+        self.shader_preset_combobox.bind("<Enter>", self.show_tooltip)
+        self.shader_preset_combobox.bind("<Leave>", self.hide_tooltip)
+        self.shader_preset_combobox.bind("<<ComboboxSelected>>", self.combobox_on_select)
+        self.shader_preset_combobox.bind("<Motion>", self.move_tooltip)
+
         self.progress_label = ttk.Label(self.frame, text="Aguardando ação...")
-        self.progress_label.pack(fill="x", anchor="s", pady=(10, 5))
+        self.progress_label.pack(fill="x", anchor="n", pady=(10, 5))
 
         self.progress_bar = ttk.Progressbar(self.frame, mode="determinate", maximum=100)
-        self.progress_bar.pack(fill="x", anchor="s")
+        self.progress_bar.pack(fill="x", anchor="n")
 
         self.buttons_frame = ttk.Frame(self.frame)
-        self.buttons_frame.pack(fill="x", anchor="s", pady=(10, 0))
+        self.buttons_frame.pack(fill="x", anchor="n", pady=(10, 0))
 
         self.buttons_frame.grid_columnconfigure(0, weight=1)
         self.buttons_frame.grid_columnconfigure(1, weight=1)
@@ -107,6 +143,15 @@ class App:
 
         self.button_cancel = ttk.Button(self.buttons_frame, text="Cancelar", command=self.cancel, state="disabled")
         self.button_cancel.grid(row=0, column=1, sticky="we", padx=(5, 0))
+
+    def combobox_on_select(self, event):
+        if event.widget.winfo_name() == "shader_combobox" and event.widget.get() == "Não":
+            self.shader_preset_combobox.config(state="disabled")
+        else:
+            self.shader_preset_combobox.config(state="readonly")
+
+        event.widget.select_clear()
+        event.widget.tk_focusNext().focus_set()
 
     def show_tooltip(self, event: tk.Event):
         self.hide_tooltip(event)
@@ -124,10 +169,42 @@ class App:
                     " Se você enfrentar problemas, considere\n"
                     "instalar o modpack com o shader desativado."
                 ),
-                relief="solid",
-                borderwidth=1,
+                relief="flat",
             )
-            label.pack()
+            label.pack(ipadx=5, ipady=5)
+
+        elif event.widget.winfo_name() in ["preset_label", "preset_combobox"]:
+            self.tooltip = tk.Toplevel(self.shader_combobox)
+            self.tooltip.overrideredirect(True)
+            self.tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+
+            label = tk.Label(
+                self.tooltip,
+                text=(
+                    "Ajusta as configurações gráficas do Minecraft, incluindo\n"
+                    "a distância de renderização e a qualidade geral dos gráficos.\n"
+                    "Essas configurações podem melhorar a experiência visual,\n"
+                    "mas também impactam o desempenho do jogo."
+                ),
+                relief="flat",
+            )
+            label.pack(ipadx=5, ipady=5)
+
+        elif event.widget.winfo_name() in ["shader_preset_label", "shader_preset_combobox"]:
+            self.tooltip = tk.Toplevel(self.shader_combobox)
+            self.tooltip.overrideredirect(True)
+            self.tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+
+            label = tk.Label(
+                self.tooltip,
+                text=(
+                    "Ajusta a qualidade gráfica do shader. Essa configuração pode\n"
+                    "melhorar a experiência visual, mas tem um enorme impacto no\n"
+                    "desempenho."
+                ),
+                relief="flat",
+            )
+            label.pack(ipadx=5, ipady=5)
 
     def hide_tooltip(self, event: tk.Event):
         if self.tooltip:
@@ -152,14 +229,22 @@ class App:
     def enable(self):
         self.directory_entry.config(state="normal")
         self.directory_button.config(state="normal")
+        self.preset_combobox.config(state="readonly")
         self.shader_combobox.config(state="readonly")
         self.button_install.config(state="normal")
         self.button_cancel.config(state="disabled")
 
+        if self.shader_combobox.get() == "Não":
+            self.shader_preset_combobox.config(state="disabled")
+        else:
+            self.shader_preset_combobox.config(state="readonly")
+
     def disable(self):
         self.directory_entry.config(state="disabled")
         self.directory_button.config(state="disabled")
+        self.preset_combobox.config(state="disabled")
         self.shader_combobox.config(state="disabled")
+        self.shader_preset_combobox.config(state="disabled")
         self.button_install.config(state="disabled")
         self.button_cancel.config(state="normal")
 
@@ -249,17 +334,79 @@ class App:
         self.thread = threading.Thread(target=self.installing, daemon=True)
         self.thread.start()
 
-    def post_installation(self):
+    def post_installation(self, progress_start: int, progress_end: int):
+        self.update_progress(progress_start, "Configurando 'options.txt'...")
+        preset = self.preset_combobox.get()
         shader = self.shader_combobox.get()
-        if shader == "Não":
-            config_shader_path = os.path.join(self.directory_entry.get(), "config", "oculus.properties")
+        shader_preset = self.shader_preset_combobox.get()
 
-            with open(config_shader_path, "r+") as file:
-                content = file.read()
-                file.seek(0)
-                new_content = re.sub(r"enableShaders=true", "enableShaders=false", content)
-                file.write(new_content)
-                file.truncate()
+        options_path = os.path.join(self.directory_entry.get(), "options.txt")
+        with open(options_path, "r+") as file:
+            content = file.read()
+            new_content = content
+
+            new_content = re.sub(r"fullscreen:true", "fullscreen:false", new_content)
+            new_content = re.sub(r"lastServer:[\.\d\:]+", "lastServer:177.137.151.231:25565", new_content)
+
+            if preset == "Qualidade":
+                new_content = re.sub(r"renderDistance:\d+", "renderDistance:12", new_content)
+                new_content = re.sub(r"simulationDistance:\d+", "simulationDistance:12", new_content)
+            else:
+                new_content = re.sub(r"renderDistance:\d+", "renderDistance:8", new_content)
+                new_content = re.sub(r"simulationDistance:\d+", "simulationDistance:8", new_content)
+
+            file.seek(0)
+            file.write(new_content)
+            file.truncate()
+
+        self.update_progress(
+            progress_start + ((progress_end - progress_start) * 0.33), "Configurando 'ComplementaryUnbound_r5.3.txt'..."
+        )
+        complementary_config_path = os.path.join(
+            self.directory_entry.get(), "shaderpacks", "ComplementaryUnbound_r5.3.txt"
+        )
+        if shader_preset in ["Baixa", "Média"]:
+            with open(complementary_config_path, "w") as file:
+                if shader_preset == "Baixa":
+                    file.write("""#Thu Jan 16 14:16:59 BRT 2025
+shadowDistance=96.0
+FXAA_DEFINE=-1
+SHADOW_QUALITY=0
+LIGHTSHAFT_QUALI_DEFINE=0
+BLOCK_REFLECT_QUALITY=1""")
+                elif shader_preset == "Média":
+                    file.write("""#Thu Jan 16 14:16:43 BRT 2025
+shadowDistance=128.0
+SHADOW_QUALITY=1
+LIGHTSHAFT_QUALI_DEFINE=1
+BLOCK_REFLECT_QUALITY=1""")
+        else:
+            if os.path.exists(complementary_config_path):
+                os.remove(complementary_config_path)
+
+        self.update_progress(
+            progress_start + ((progress_end - progress_start) * 0.66), "Configurando 'oculus.properties'..."
+        )
+        config_shader_path = os.path.join(self.directory_entry.get(), "config", "oculus.properties")
+        with open(config_shader_path, "r+") as file:
+            content = file.read()
+            new_content = content
+
+            if shader == "Não":
+                new_content = re.sub(r"enableShaders=(?:true|false)", "enableShaders=false", content)
+            else:
+                new_content = re.sub(r"enableShaders=(?:true|false)", "enableShaders=true", content)
+
+            if preset == "Qualidade":
+                new_content = re.sub(r"maxShadowRenderDistance=\d+", "maxShadowRenderDistance=12", new_content)
+            else:
+                new_content = re.sub(r"maxShadowRenderDistance=\d+", "maxShadowRenderDistance=8", new_content)
+
+            file.seek(0)
+            file.write(new_content)
+            file.truncate()
+
+        self.update_progress(progress_end, "Configurações aplicadas!")
 
     def installing(self):
         self.disable()
@@ -277,8 +424,7 @@ class App:
                 self.downloading = False
                 self.update_progress(80, "Extraindo arquivos...")
                 self.extract_zip(temp, dest_dir)
-                self.update_progress(90, "Aplicando configurações...")
-                self.post_installation()
+                self.post_installation(90, 100)
 
             # Passo 2: Extraí novos arquivos
             self.update_progress(100, "Download e instalação do modpack concluído!")
