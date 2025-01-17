@@ -23,7 +23,7 @@ class App:
 
         self.fix_windows_dpi()
 
-        icon = tk.PhotoImage(file=os.path.normpath("app/assets/logo.png"))
+        icon = tk.PhotoImage(file=os.path.normpath("./app/assets/logo.png"))
         self.root.iconphoto(True, icon)
 
         self.default_dir = default_path()
@@ -34,7 +34,7 @@ class App:
         screen_height = self.root.winfo_screenheight()
 
         width = 600
-        height = 425
+        height = 500
 
         x = (screen_width - width) // 2
         y = (screen_height - height) // 2
@@ -45,6 +45,10 @@ class App:
         self.root.title("Última Esperança: Instalador e Atualizador de Modpacks")
         self.root.wm_resizable(False, False)
         self.root.wm_geometry(f"{width}x{height}+{x}+{y}")
+
+        self.banner_image = tk.PhotoImage(file=os.path.normpath("./app/assets/background.png"))
+        self.banner_label = ttk.Label(self.root, image=self.banner_image, borderwidth=0, relief="flat")
+        self.banner_label.pack()
 
         self.frame = tk.Frame(self.root)
         self.frame.pack(expand=True, fill="both", padx=25, pady=10)
