@@ -1,0 +1,7 @@
+altgraph==0.17.4
+packaging==24.2
+pillow==11.1.0
+pyinstaller==6.11.1
+pyinstaller-hooks-contrib==2025.0
+setuptools==75.8.0
+ttkthemes @ git+https://github.com/RedFantom/ttkthemes@56a7bdcb5c86b88aef637ffd60549efa1bf92839

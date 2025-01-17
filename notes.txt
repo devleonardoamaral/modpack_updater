@@ -1,0 +1,5 @@
+LINUX BUILD
+pyinstaller --onefile --windowed --add-data="app/assets/*:app/assets" main.py
+
+WINDOWS BUILD
+pyinstaller --onefile --windowed --icon=app/assets/icon.ico --add-data="app/assets/*;app/assets" main.py

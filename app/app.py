@@ -10,21 +10,40 @@ import threading
 import tkinter as tk
 from urllib.parse import urlparse
 from tkinter import filedialog, ttk
-from .utils import default_path
+from ttkthemes import ThemedTk
+from .utils import default_path, resource_path
+
+SCALE_FACTOR = None
+
+if platform.system() == "Windows":
+    try:
+        from ctypes import windll
+
+        windll.shcore.SetProcessDpiAwareness(1)
+        scaleFactor = windll.shcore.GetScaleFactorForDevice(0) / 100
+    except Exception as e:
+        print(f"Erro ao ajustar DPI: {e}")
 
 
 class App:
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: ThemedTk):
         self.root = root
+
+        if SCALE_FACTOR is not None:
+            root.tk.call("tk", "scaling", SCALE_FACTOR)
+
+        root.set_theme("black")
+
         self.url = (
             "https://codeload.github.com/devleonardoamaral/minecraft_ultimaesperanca_modpack/zip/refs/heads/master"
         )
         self.tooltip = None
 
-        self.fix_windows_dpi()
-
-        icon = tk.PhotoImage(file=os.path.normpath("./app/assets/logo.png"))
-        self.root.iconphoto(True, icon)
+        if platform.system() == "Windows":
+            self.root.wm_iconbitmap(default=resource_path("app/assets/icon.ico"))
+        else:
+            icon = tk.PhotoImage(file=resource_path("app/assets/logo.png"))
+            self.root.iconphoto(True, icon)
 
         self.default_dir = default_path()
         self.downloading = False
@@ -34,7 +53,7 @@ class App:
         screen_height = self.root.winfo_screenheight()
 
         width = 600
-        height = 500
+        height = 520
 
         x = (screen_width - width) // 2
         y = (screen_height - height) // 2
@@ -46,11 +65,14 @@ class App:
         self.root.wm_resizable(False, False)
         self.root.wm_geometry(f"{width}x{height}+{x}+{y}")
 
-        self.banner_image = tk.PhotoImage(file=os.path.normpath("./app/assets/background.png"))
+        self.banner_image = tk.PhotoImage(file=resource_path("./app/assets/background.png"))
         self.banner_label = ttk.Label(self.root, image=self.banner_image, borderwidth=0, relief="flat")
         self.banner_label.pack()
 
-        self.frame = tk.Frame(self.root)
+        self.main_frame = ttk.Frame(self.root)
+        self.main_frame.pack(expand=True, fill="both")
+
+        self.frame = ttk.Frame(self.main_frame)
         self.frame.pack(expand=True, fill="both", padx=25, pady=10)
 
         self.directory_label = ttk.Label(self.frame, text="Diretório do Minecraft:", anchor="w")
@@ -134,7 +156,7 @@ class App:
         self.shader_preset_combobox.bind("<Motion>", self.move_tooltip)
 
         self.progress_label = ttk.Label(self.frame, text="Aguardando ação...", anchor="sw")
-        self.progress_label.pack(fill="both", expand=True, anchor="sw", pady=(10, 5))
+        self.progress_label.pack(fill="both", expand=True, anchor="sw", pady=(0, 5))
 
         self.progress_bar = ttk.Progressbar(self.frame, mode="determinate", maximum=100)
         self.progress_bar.pack(fill="x", anchor="n")
@@ -151,14 +173,8 @@ class App:
         self.button_cancel = ttk.Button(self.buttons_frame, text="Cancelar", command=self.cancel, state="disabled")
         self.button_cancel.grid(row=0, column=1, sticky="we", padx=(5, 0))
 
-    def fix_windows_dpi(self):
-        if platform.system() == "Windows":
-            try:
-                from ctypes import windll
-
-                windll.shcore.SetProcessDpiAwareness(1)
-            except Exception as e:
-                print(f"Erro ao ajustar DPI: {e}")
+        self.footer_label = ttk.Label(self.root, image=self.banner_image, borderwidth=0, relief="flat")
+        self.footer_label.pack(anchor="sw")
 
     def combobox_on_select(self, event):
         if event.widget.winfo_name() == "shader_combobox" and event.widget.get() == "Não":
@@ -450,7 +466,7 @@ BLOCK_REFLECT_QUALITY=1""")
                 self.post_installation(90, 100)
 
             # Passo 2: Extraí novos arquivos
-            self.update_progress(100, "Download e instalação do modpack concluído!")
+            self.update_progress(100, "Download e instalação concluídos! Você já pode fechar essa janela.")
 
         except Exception as error:
             self.update_progress(0, f"Falhou: {error}")
@@ -460,4 +476,4 @@ BLOCK_REFLECT_QUALITY=1""")
 
     @classmethod
     def get_instance(cls):
-        return cls(tk.Tk())
+        return cls(ThemedTk())
